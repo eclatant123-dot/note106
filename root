@@ -1,0 +1,1334 @@
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎶 모둠 합주 연습 기록장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+
+        #view-group-list.active, #view-status.active, #view-group-detail.active, #view-record-form.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .notebook-sheet {
+            background-color: #ffffff;
+            background-image: linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(90deg, #f1f5f9 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <div id="view-group-list" class="view-section active w-full max-w-3xl mx-auto flex-1 pb-20">
+        <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-10 border-b border-indigo-100 px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-black text-indigo-600">1-6 합주 연습 기록장</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openStatusView()" class="bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-full text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+                    <i class="fas fa-table"></i> 현황표
+                </button>
+                <button onclick="openNewGroupModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+                    <i class="fas fa-plus"></i> 새 모둠
+                </button>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <div id="emptyGroupState" class="hidden text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300 mt-4">
+                <i class="fas fa-users text-5xl text-slate-300 mb-4"></i>
+                <p class="text-slate-500 font-medium">아직 생성된 모둠이 없습니다.<br>우측 상단의 '<i class="fas fa-plus text-xs"></i> 새 모둠'을 눌러 모둠을 생성해보세요!</p>
+            </div>
+            
+            <div id="groupListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                <!-- Group cards generated dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Class Status View -->
+    <div id="view-status" class="view-section w-full max-w-6xl mx-auto flex-1 pb-20">
+        <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-20 border-b border-indigo-100 px-4 py-4 flex items-center gap-3">
+            <button onclick="closeStatusView()" class="text-slate-500 hover:text-slate-700 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h1 id="statusClassTitle" class="text-xl font-black text-indigo-600">연습 기록 현황표</h1>
+                <p class="text-xs text-slate-500 font-medium mt-0.5">학생별 · 날짜별 개인 연습 기록 작성 여부</p>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs text-slate-600 font-semibold">
+                        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-black mr-1">✓</span>
+                        작성 완료
+                        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-400 font-black ml-3 mr-1">—</span>
+                        미작성
+                    </p>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button onclick="openIncompleteStudentsModal()" class="bg-white hover:bg-amber-50 text-slate-600 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                            <i class="fas fa-user-clock"></i> 미작성 학생 보기
+                        </button>
+                        <p class="hidden md:block text-[11px] text-slate-400 font-medium"><i class="fas fa-arrows-left-right mr-1"></i> 날짜가 많으면 좌우로 밀어서 확인하세요.</p>
+                    </div>
+                </div>
+
+                <div id="statusEmptyState" class="hidden text-center py-16 px-4">
+                    <i class="fas fa-clipboard-list text-4xl text-slate-300 mb-3"></i>
+                    <p class="text-slate-500 font-medium text-sm">현황표에 표시할 학생 또는 연습 기록이 아직 없습니다.</p>
+                </div>
+
+                <div id="statusTableWrap" class="overflow-x-auto">
+                    <table class="w-full min-w-max border-collapse text-sm">
+                        <thead id="statusTableHead" class="bg-indigo-50 text-slate-700"></thead>
+                        <tbody id="statusTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Incomplete Students Modal -->
+    <div id="incompleteStudentsModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl card-shadow border border-slate-100 max-h-[82vh] flex flex-col overflow-hidden">
+            <div class="flex justify-between items-start gap-3 px-5 py-4 border-b border-slate-200 bg-white">
+                <div>
+                    <h2 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-user-clock text-amber-500"></i> 미작성 학생
+                    </h2>
+                    <p class="text-xs text-slate-500 font-medium mt-1">날짜별로 개인 연습 기록을 작성하지 않은 학생입니다.</p>
+                </div>
+                <button onclick="closeIncompleteStudentsModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 shrink-0">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="incompleteStudentsContent" class="overflow-y-auto flex-1 p-4 space-y-3"></div>
+            <div class="px-4 pb-4">
+                <button onclick="closeIncompleteStudentsModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-group-detail" class="view-section w-full max-w-4xl mx-auto flex-1 pb-24">
+        <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-10 border-b border-indigo-100 px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button onclick="goBackToGroups()" class="text-slate-500 hover:text-slate-700 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 id="detailGroupTitle" onclick="openEditGroupNameModal()" class="text-xl font-black text-slate-800 hover:text-indigo-600 cursor-pointer flex items-center gap-1.5 transition-colors group max-w-[200px] md:max-w-md" title="클릭하여 모둠명 수정">
+                    <span id="detailGroupTitleText" class="truncate">모둠명</span>
+                    <i class="fas fa-pen text-xs text-slate-400 group-hover:text-indigo-600"></i>
+                </h1>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <!-- Group Header Banner -->
+            <div class="bg-white border border-indigo-100 rounded-3xl p-5 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">🎶 연주곡</span>
+                        <h2 id="detailSongTitle" onclick="openEditSongModal()" class="text-lg font-bold text-slate-800 hover:text-indigo-600 cursor-pointer flex items-center gap-1.5 transition-colors group" title="클릭하여 연주곡 수정">
+                            <span id="detailSongTitleText">곡 이름</span>
+                            <i class="fas fa-pen text-xs text-slate-400 group-hover:text-indigo-600"></i>
+                        </h2>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 flex-wrap">
+                        <span class="text-sm font-bold text-indigo-700">👑 <span id="detailLeaderBadge">대표학생이름</span><span id="detailMembersText" class="text-slate-600 font-medium ml-0.5"></span></span>
+                        <button onclick="openManageMembersModal()" class="inline-flex items-center gap-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1 rounded-full font-bold transition-colors shadow-sm ml-1">
+                            <i class="fas fa-user-plus"></i> 모둠원 관리 (+<span id="memberCountTag">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4 px-1">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-lg font-black text-slate-800">연습 기록</h3>
+                    <span id="recordCountBadge" class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0건</span>
+                </div>
+                <button onclick="openRecordForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5">
+                    <i class="fas fa-plus"></i> 연습기록 추가
+                </button>
+            </div>
+
+            <div id="emptyRecordState" class="hidden text-center py-16 bg-white rounded-3xl border border-dashed border-slate-300">
+                <i class="fas fa-book-open text-4xl text-slate-300 mb-3"></i>
+                <p class="text-slate-500 font-medium text-sm">아직 작성된 연습 기록이 없습니다.<br>우측 상단의 '+ 연습기록 추가' 버튼을 눌러 첫 기록을 남겨보세요!</p>
+            </div>
+
+            <div id="recordsList" class="space-y-6">
+                <!-- Practice records cards dynamically populated -->
+            </div>
+        </main>
+    </div>
+
+    <div id="view-record-form" class="view-section w-full max-w-2xl mx-auto flex-1 pb-20">
+        <header class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-10 border-b border-indigo-100 px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button onclick="closeRecordForm()" class="text-slate-500 hover:text-slate-700 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 id="recordFormTitle" class="text-lg font-black text-slate-800">오늘의 모둠 합주 연습 기록장</h1>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <form id="practiceForm" class="bg-white p-6 rounded-3xl card-shadow border border-slate-100 space-y-5">
+                <input type="hidden" id="editingRecordId">
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">▶︎ 날짜 선택</label>
+                    <input type="date" id="recordDate" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">▶︎ 오늘의 목표</label>
+                    <textarea id="todayGoal" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="오늘 모둠 연습 목표를 작성하세요."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">▶︎ 오늘 우리 모둠이 해낸 것</label>
+                    <textarea id="groupAchieved" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="오늘 연주 및 연습에서 잘 진행된 점을 작성하세요."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">▶︎ 다음 시간 최우선 목표</label>
+                    <textarea id="groupNextGoal" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="다음 시간에 맞춰 해결할 목표를 작성하세요."></textarea>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeRecordForm()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3.5 rounded-xl text-sm transition-colors">
+                        취소
+                    </button>
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow transition-colors text-sm">
+                        기록 저장하기
+                    </button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <!-- Edit Song Modal -->
+    <div id="editSongModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 card-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-800">연주곡 수정</h2>
+                <button onclick="closeEditSongModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editSongForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">새 연주곡 이름</label>
+                    <input type="text" id="editSongInput" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="예: 아이유 - 너의 의미">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm">
+                    저장하기
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Group Name Modal -->
+    <div id="editGroupNameModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 card-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-800">모둠명 수정</h2>
+                <button onclick="closeEditGroupNameModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editGroupNameForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">새 모둠 이름</label>
+                    <input type="text" id="editGroupNameInput" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="예: 1조, 2조, 밴드부 등">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm">
+                    저장하기
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- New Group Modal -->
+    <div id="newGroupModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 card-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-xl font-bold text-slate-800">새 모둠 만들기</h2>
+                <button onclick="closeNewGroupModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="newGroupForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">모둠 이름</label>
+                    <input type="text" id="newGroupName" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="예: 1조, 밴드부 등">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">연주곡</label>
+                    <input type="text" id="newSongTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="예: 아이유 - 너의 의미">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">대표 학생</label>
+                    <input type="text" id="newLeaderName" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="예: 10138홍길동">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 mt-2 rounded-xl shadow transition-colors">
+                    모둠 생성
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Member Management Modal -->
+    <div id="memberModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl p-6 card-shadow border border-slate-100 max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">모둠원 관리</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">모둠원 이름과 담당 악기를 등록해주세요.</p>
+                </div>
+                <button onclick="closeManageMembersModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="memberListManageContainer" class="space-y-3 overflow-y-auto flex-1 pr-1 mb-4">
+                <!-- Member row items -->
+            </div>
+
+            <button type="button" onclick="addMemberInputRow()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl border border-dashed border-slate-300 text-sm mb-4">
+                <i class="fas fa-plus mr-1"></i> 모둠원 추가하기
+            </button>
+
+            <button type="button" onclick="saveMembersList()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow">
+                모둠원 저장
+            </button>
+        </div>
+    </div>
+
+    <!-- Individual Student Record Modal -->
+    <div id="studentRecordModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 card-shadow border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 id="stModalTitle" class="text-lg font-bold text-slate-800">학생 연습 기록</h3>
+                    <p id="stModalSub" class="text-xs text-indigo-600 font-semibold">담당 악기</p>
+                </div>
+                <button onclick="closeStudentRecordModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="studentRecordForm" class="space-y-4">
+                <input type="hidden" id="stRecordId">
+                <input type="hidden" id="stMemberId">
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">오늘 한 연습</label>
+                    <textarea id="stPractice" rows="3" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="예: 1절 음정, 가사 연습"></textarea>
+                    <p class="text-[11px] text-amber-600 font-medium mt-1 leading-snug">
+                        * '기타 연습함'보다 '후렴 G-D-Em-C 코드 전환을 끊기지 않게 연습함'처럼 구체적으로 기록합니다.
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">현재 상태</label>
+                    <select id="stStatus" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="🔴 연습필요">🔴 연습필요</option>
+                        <option value="🟠 연습중">🟠 연습중</option>
+                        <option value="🟢 거의 완료">🟢 거의 완료</option>
+                        <option value="💙 완벽">💙 완벽</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">다음 목표</label>
+                    <input type="text" id="stNextGoal" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="예: 반주에 맞춰 부르기">
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm mt-2">
+                    개인 기록 저장
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const userProvidedConfig = {
+            apiKey: "AIzaSyDLtJX3mUCj5XeuWZTplOD4cQCgpACooLw",
+            authDomain: "music-note-1df32.firebaseapp.com",
+            projectId: "music-note-1df32",
+            storageBucket: "music-note-1df32.firebasestorage.app",
+            messagingSenderId: "693347860122",
+            appId: "1:693347860122:web:d6caa30c7904ec7b25e923"
+        };
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'music-practice-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userProvidedConfig;
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const db = getFirestore(firebaseApp);
+        const auth = getAuth(firebaseApp);
+
+        let currentUser = null;
+
+        const STORAGE_KEY = 'music_practice_app_v3_data';
+        
+        let appData = {
+            groups: [],   // { id, classId, name, song, leader, members: [{id, name, instrument}] }
+            records: []   // { id, groupId, date, todayGoal, groupAchieved, groupNextGoal, studentData: { memberId: { todayPractice, status, nextGoal } } }
+        };
+
+        let currentState = {
+            classId: 'all',
+            classLabel: '',
+            groupId: null
+        };
+
+        function loadLocalData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appData.groups = parsed.groups || [];
+                    appData.records = parsed.records || [];
+                } catch(e) {
+                    console.error("Local data load error", e);
+                }
+            }
+        }
+
+        function saveLocalData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        }
+
+        async function initAuthAndFirestore() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    currentUser = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+            } catch (err) {
+                console.warn("Firebase Auth warning, using offline fallback:", err);
+            }
+
+            if (!currentUser) return;
+            const groupsCol = collection(db, 'artifacts', appId, 'public', 'data', 'groups');
+            const recordsCol = collection(db, 'artifacts', appId, 'public', 'data', 'records');
+
+            onSnapshot(groupsCol, (snapshot) => {
+                let updated = false;
+                snapshot.docChanges().forEach(change => {
+                    const data = change.doc.data();
+                    const idx = appData.groups.findIndex(g => g.id === data.id);
+                    if (change.type === "added" || change.type === "modified") {
+                        if (idx >= 0) appData.groups[idx] = data;
+                        else appData.groups.push(data);
+                        updated = true;
+                    } else if (change.type === "removed") {
+                        if (idx >= 0) appData.groups.splice(idx, 1);
+                        updated = true;
+                    }
+                });
+                saveLocalData();
+                if (updated) {
+                    if (currentState.classId) renderGroups();
+                    if (document.getElementById('view-status')?.classList.contains('active')) renderStatusTable();
+                    if (currentState.groupId) {
+                        const activeG = getActiveGroup();
+                        if (activeG) openGroupDetail(activeG);
+                    }
+                }
+            }, (err) => console.error("groups sync error:", err));
+
+            onSnapshot(recordsCol, (snapshot) => {
+                let updated = false;
+                snapshot.docChanges().forEach(change => {
+                    const data = change.doc.data();
+                    const idx = appData.records.findIndex(r => String(r.id) === String(data.id));
+                    if (change.type === "added" || change.type === "modified") {
+                        if (idx >= 0) appData.records[idx] = data;
+                        else appData.records.push(data);
+                        updated = true;
+                    } else if (change.type === "removed") {
+                        if (idx >= 0) appData.records.splice(idx, 1);
+                        updated = true;
+                    }
+                });
+                saveLocalData();
+                if (updated && currentState.groupId) {
+                    renderRecords();
+                }
+                if (updated && document.getElementById('view-status')?.classList.contains('active')) {
+                    renderStatusTable();
+                }
+            }, (err) => console.error("records sync error:", err));
+        }
+
+        async function syncGroup(group) {
+            const idx = appData.groups.findIndex(g => g.id === group.id);
+            if (idx >= 0) appData.groups[idx] = group;
+            else appData.groups.push(group);
+            saveLocalData();
+
+            if (!currentUser) return;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'groups', group.id), group);
+            } catch (e) {
+                console.error("Firestore setDoc group error:", e);
+            }
+        }
+
+        async function syncRecord(record) {
+            const idx = appData.records.findIndex(r => String(r.id) === String(record.id));
+            if (idx >= 0) appData.records[idx] = record;
+            else appData.records.push(record);
+            saveLocalData();
+
+            if (!currentUser) return;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', String(record.id)), record);
+            } catch (e) {
+                console.error("Firestore setDoc record error:", e);
+            }
+        }
+
+        function renderGroups() {
+            const container = document.getElementById('groupListContainer');
+            const emptyState = document.getElementById('emptyGroupState');
+            
+            const classGroups = appData.groups
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true }));
+
+            container.innerHTML = '';
+            
+            if (classGroups.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                classGroups.forEach(group => {
+                    const memberCount = group.members ? group.members.length : 1;
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-5 rounded-2xl card-shadow border border-slate-100 flex flex-col justify-between hover:border-indigo-200 transition-all cursor-pointer';
+                    card.onclick = () => openGroupDetail(group);
+                    
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-800 truncate">${group.name}</h3>
+                                    <p class="text-xs text-indigo-600 font-semibold">${group.song}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500 font-medium">
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-crown text-amber-500"></i> ${group.leader}
+                            </span>
+                            <span class="bg-slate-100 px-2.5 py-1 rounded-full text-slate-600 font-bold">
+                                팀원 ${memberCount}명
+                            </span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        }
+
+        function getStudentSortKey(name) {
+            const value = String(name || '').trim();
+            const hangulPart = value.match(/[가-힣].*$/);
+            return hangulPart ? hangulPart[0] : value.replace(/^\d+\s*/, '');
+        }
+
+        function formatStatusDate(dateStr) {
+            const parts = String(dateStr || '').split(/[.-]/);
+            if (parts.length >= 3) {
+                return `${Number(parts[1])}/${Number(parts[2])}`;
+            }
+            return dateStr || '';
+        }
+
+        function isStudentRecordComplete(record, student) {
+            if (!record || !record.studentData) return false;
+            const stData = record.studentData[student.memberId] || record.studentData[student.name] || {};
+            return !!(stData.todayPractice && stData.status && stData.nextGoal);
+        }
+
+        function renderStatusTable() {
+            const classGroups = appData.groups
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true }));
+
+            const classGroupIds = new Set(classGroups.map(g => g.id));
+            const classRecords = appData.records.filter(r => classGroupIds.has(r.groupId));
+
+            const students = [];
+            classGroups.forEach(group => {
+                const members = (group.members && group.members.length > 0)
+                    ? group.members
+                    : (group.leader ? [{ id: `leader_${group.id}`, name: group.leader, instrument: '' }] : []);
+
+                members.forEach(member => {
+                    if (!member || !String(member.name || '').trim()) return;
+                    students.push({
+                        key: `${group.id}__${member.id || member.name}`,
+                        groupId: group.id,
+                        groupName: group.name || '',
+                        memberId: member.id || member.name,
+                        name: String(member.name || '').trim(),
+                        instrument: member.instrument || ''
+                    });
+                });
+            });
+
+            students.sort((a, b) => {
+                const byName = getStudentSortKey(a.name).localeCompare(getStudentSortKey(b.name), 'ko', { numeric: true });
+                if (byName !== 0) return byName;
+                return a.name.localeCompare(b.name, 'ko', { numeric: true });
+            });
+
+            const dates = [...new Set(classRecords.map(r => r.date).filter(Boolean))]
+                .sort((a, b) => String(a).localeCompare(String(b), 'ko', { numeric: true }));
+
+            document.getElementById('statusClassTitle').textContent = '연습 기록 현황표';
+
+            students.forEach((student, index) => {
+                student.order = index + 1;
+            });
+
+            const head = document.getElementById('statusTableHead');
+            const body = document.getElementById('statusTableBody');
+            const empty = document.getElementById('statusEmptyState');
+            const wrap = document.getElementById('statusTableWrap');
+
+            head.innerHTML = '';
+            body.innerHTML = '';
+
+            if (students.length === 0 || dates.length === 0) {
+                empty.querySelector('p').textContent = '현황표에 표시할 학생 또는 연습 기록이 아직 없습니다.';
+                empty.classList.remove('hidden');
+                wrap.classList.add('hidden');
+                return;
+            }
+
+            const completionByDate = {};
+            dates.forEach(date => {
+                completionByDate[date] = students.reduce((count, student) => {
+                    const complete = classRecords.some(r =>
+                        r.groupId === student.groupId &&
+                        r.date === date &&
+                        isStudentRecordComplete(r, student)
+                    );
+                    return count + (complete ? 1 : 0);
+                }, 0);
+            });
+
+            const displayStudents = students;
+
+            empty.classList.add('hidden');
+            wrap.classList.remove('hidden');
+
+            head.innerHTML = `
+                <tr>
+                    <th class="sticky left-0 z-10 bg-indigo-50 border-b border-r border-indigo-100 px-4 py-3 text-left font-black min-w-[165px]">
+                        순번 · 학생 이름
+                    </th>
+                    <th class="border-b border-r border-indigo-100 px-3 py-3 text-left font-black min-w-[100px]">
+                        모둠
+                    </th>
+                    ${dates.map(date => `
+                        <th class="border-b border-r border-indigo-100 px-3 py-2 text-center font-black min-w-[82px]" title="${date}">
+                            <div>${formatStatusDate(date)}</div>
+                            <div class="text-[10px] font-bold text-indigo-500 mt-0.5">${completionByDate[date]}/${students.length}</div>
+                        </th>
+                    `).join('')}
+                </tr>
+            `;
+
+            displayStudents.forEach((student, index) => {
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60';
+
+                const dateCells = dates.map(date => {
+                    const complete = classRecords.some(r =>
+                        r.groupId === student.groupId &&
+                        r.date === date &&
+                        isStudentRecordComplete(r, student)
+                    );
+
+                    if (complete) {
+                        return `
+                            <td class="border-r border-slate-100 px-3 py-3 text-center" title="${date} 작성 완료">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black text-base">✓</span>
+                            </td>
+                        `;
+                    }
+
+                    return `
+                        <td class="border-r border-slate-100 px-3 py-3 text-center" title="${date} 미작성">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-400 font-black text-base">—</span>
+                        </td>
+                    `;
+                }).join('');
+
+                tr.innerHTML = `
+                    <td class="sticky left-0 z-[5] ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} border-r border-slate-200 px-4 py-3 font-black text-slate-800 whitespace-nowrap">
+                        <div><span class="inline-block min-w-[1.7rem] text-indigo-500">${student.order}.</span>${student.name}</div>
+                        ${student.instrument ? `<div class="text-[10px] text-slate-400 font-medium mt-0.5">${student.instrument}</div>` : ''}
+                    </td>
+                    <td class="border-r border-slate-100 px-3 py-3 text-slate-600 font-semibold whitespace-nowrap">
+                        ${student.groupName}
+                    </td>
+                    ${dateCells}
+                `;
+
+                body.appendChild(tr);
+            });
+        }
+
+        function openStatusView() {
+            renderStatusTable();
+            switchView('view-status');
+        }
+
+        function closeStatusView() {
+            renderGroups();
+            switchView('view-group-list');
+        }
+
+        function openIncompleteStudentsModal() {
+            const classGroups = appData.groups
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true }));
+
+            const classGroupIds = new Set(classGroups.map(g => g.id));
+            const classRecords = appData.records.filter(r => classGroupIds.has(r.groupId));
+
+            const students = [];
+            classGroups.forEach(group => {
+                const members = (group.members && group.members.length > 0)
+                    ? group.members
+                    : (group.leader ? [{ id: `leader_${group.id}`, name: group.leader, instrument: '' }] : []);
+
+                members.forEach(member => {
+                    if (!member || !String(member.name || '').trim()) return;
+                    students.push({
+                        groupId: group.id,
+                        groupName: group.name || '',
+                        memberId: member.id || member.name,
+                        name: String(member.name || '').trim()
+                    });
+                });
+            });
+
+            students.sort((a, b) => {
+                const byName = getStudentSortKey(a.name).localeCompare(getStudentSortKey(b.name), 'ko', { numeric: true });
+                if (byName !== 0) return byName;
+                return a.name.localeCompare(b.name, 'ko', { numeric: true });
+            });
+            students.forEach((student, index) => student.order = index + 1);
+
+            const dates = [...new Set(classRecords.map(r => r.date).filter(Boolean))]
+                .sort((a, b) => String(a).localeCompare(String(b), 'ko', { numeric: true }));
+
+            const content = document.getElementById('incompleteStudentsContent');
+            content.innerHTML = '';
+
+            if (students.length === 0 || dates.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-10">
+                        <i class="fas fa-clipboard-list text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-sm text-slate-500 font-medium">확인할 학생 또는 연습 기록이 아직 없습니다.</p>
+                    </div>
+                `;
+            } else {
+                let hasAnyIncomplete = false;
+
+                dates.forEach(date => {
+                    const incomplete = students.filter(student => !classRecords.some(r =>
+                        r.groupId === student.groupId &&
+                        r.date === date &&
+                        isStudentRecordComplete(r, student)
+                    ));
+
+                    if (incomplete.length === 0) return;
+                    hasAnyIncomplete = true;
+
+                    const section = document.createElement('div');
+                    section.className = 'border border-amber-200 rounded-2xl overflow-hidden bg-amber-50/40';
+                    section.innerHTML = `
+                        <div class="px-4 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between gap-2">
+                            <div class="font-black text-slate-800 text-sm">${date}</div>
+                            <span class="text-[11px] font-bold text-amber-700 bg-white border border-amber-200 px-2 py-0.5 rounded-full">${incomplete.length}명 미작성</span>
+                        </div>
+                        <div class="divide-y divide-amber-100 bg-white">
+                            ${incomplete.map(student => `
+                                <div class="px-4 py-2.5 flex items-center justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <span class="inline-block min-w-[1.8rem] text-indigo-500 font-black text-sm">${student.order}.</span>
+                                        <span class="font-bold text-slate-800 text-sm">${student.name}</span>
+                                    </div>
+                                    <span class="text-[11px] text-slate-500 font-semibold bg-slate-100 px-2 py-1 rounded-lg shrink-0">${student.groupName}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    content.appendChild(section);
+                });
+
+                if (!hasAnyIncomplete) {
+                    content.innerHTML = `
+                        <div class="text-center py-10">
+                            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <p class="text-sm text-slate-700 font-black">미작성 학생이 없습니다.</p>
+                            <p class="text-xs text-slate-400 font-medium mt-1">모든 학생이 표시된 날짜의 개인 기록을 작성했습니다.</p>
+                        </div>
+                    `;
+                }
+            }
+
+            document.getElementById('incompleteStudentsModal').classList.remove('hidden');
+        }
+
+        function closeIncompleteStudentsModal() {
+            document.getElementById('incompleteStudentsModal').classList.add('hidden');
+        }
+
+        function openNewGroupModal() {
+            document.getElementById('newGroupModal').classList.remove('hidden');
+            document.getElementById('newGroupName').focus();
+        }
+
+        function closeNewGroupModal() {
+            document.getElementById('newGroupModal').classList.add('hidden');
+            document.getElementById('newGroupForm').reset();
+        }
+
+        document.getElementById('newGroupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('newGroupName').value.trim();
+            const song = document.getElementById('newSongTitle').value.trim();
+            const leader = document.getElementById('newLeaderName').value.trim();
+            
+            const newGroup = {
+                id: 'g_' + Date.now(),
+                classId: 'all',
+                name: name,
+                song: song,
+                leader: leader,
+                members: [
+                    { id: 'm_' + Date.now(), name: leader, instrument: '보컬/리더' }
+                ]
+            };
+            
+            syncGroup(newGroup);
+            closeNewGroupModal();
+            renderGroups();
+        });
+
+        function getActiveGroup() {
+            return appData.groups.find(g => g.id === currentState.groupId);
+        }
+
+        function openGroupDetail(group) {
+            currentState.groupId = group.id;
+            const activeGroup = getActiveGroup() || group;
+
+            document.getElementById('detailGroupTitleText').textContent = activeGroup.name;
+            document.getElementById('detailSongTitleText').textContent = activeGroup.song;
+            
+            const leaderName = activeGroup.leader || '';
+            document.getElementById('detailLeaderBadge').textContent = leaderName;
+
+            const members = activeGroup.members || [];
+            const allNames = members.map(m => m.name.trim()).filter(Boolean);
+            
+            let otherNames = [];
+            let leaderFound = false;
+            allNames.forEach(name => {
+                if (name === leaderName && !leaderFound) {
+                    leaderFound = true;
+                } else {
+                    otherNames.push(name);
+                }
+            });
+
+            const detailMembersTextEl = document.getElementById('detailMembersText');
+            if (otherNames.length > 0) {
+                detailMembersTextEl.textContent = ', ' + otherNames.join(', ');
+            } else {
+                detailMembersTextEl.textContent = '';
+            }
+
+            document.getElementById('memberCountTag').textContent = members.length || 1;
+            
+            renderRecords();
+            switchView('view-group-detail');
+        }
+
+        function openEditSongModal() {
+            const group = getActiveGroup();
+            if (!group) return;
+            document.getElementById('editSongInput').value = group.song || '';
+            document.getElementById('editSongModal').classList.remove('hidden');
+            document.getElementById('editSongInput').focus();
+        }
+
+        function closeEditSongModal() {
+            document.getElementById('editSongModal').classList.add('hidden');
+        }
+
+        document.getElementById('editSongForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const group = getActiveGroup();
+            if (!group) return;
+
+            const newSong = document.getElementById('editSongInput').value.trim();
+            if (newSong) {
+                group.song = newSong;
+                syncGroup(group);
+                document.getElementById('detailSongTitleText').textContent = newSong;
+                closeEditSongModal();
+                showToast('연주곡이 수정되었습니다.');
+            }
+        });
+
+        function openEditGroupNameModal() {
+            const group = getActiveGroup();
+            if (!group) return;
+            document.getElementById('editGroupNameInput').value = group.name || '';
+            document.getElementById('editGroupNameModal').classList.remove('hidden');
+            document.getElementById('editGroupNameInput').focus();
+        }
+
+        function closeEditGroupNameModal() {
+            document.getElementById('editGroupNameModal').classList.add('hidden');
+        }
+
+        document.getElementById('editGroupNameForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const group = getActiveGroup();
+            if (!group) return;
+
+            const newName = document.getElementById('editGroupNameInput').value.trim();
+            if (newName) {
+                group.name = newName;
+                syncGroup(group);
+                document.getElementById('detailGroupTitleText').textContent = newName;
+                closeEditGroupNameModal();
+                showToast('모둠명이 수정되었습니다.');
+            }
+        });
+
+        function goBackToGroups() {
+            currentState.groupId = null;
+            renderGroups();
+            switchView('view-group-list');
+        }
+
+        function openManageMembersModal() {
+            const group = getActiveGroup();
+            if (!group) return;
+
+            if (!group.members || group.members.length === 0) {
+                group.members = [{ id: 'm_' + Date.now(), name: group.leader, instrument: '리더' }];
+            }
+
+            const container = document.getElementById('memberListManageContainer');
+            container.innerHTML = '';
+            group.members.forEach(m => {
+                addMemberInputRow(m.name, m.instrument, m.id);
+            });
+
+            document.getElementById('memberModal').classList.remove('hidden');
+        }
+
+        function closeManageMembersModal() {
+            document.getElementById('memberModal').classList.add('hidden');
+        }
+
+        function addMemberInputRow(name = '', instrument = '', id = null) {
+            const container = document.getElementById('memberListManageContainer');
+            const memberId = id || ('m_' + Math.random().toString(36).substr(2, 9));
+            const div = document.createElement('div');
+            div.className = 'member-manage-row flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200';
+            div.dataset.id = memberId;
+            div.innerHTML = `
+                <input type="text" placeholder="학생 이름" value="${name}" class="mem-name w-1/2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                <input type="text" placeholder="악기 (예: 기타, 보컬)" value="${instrument}" class="mem-inst w-1/2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500 px-2">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function saveMembersList() {
+            const group = getActiveGroup();
+            if (!group) return;
+
+            const updatedMembers = [];
+            document.querySelectorAll('.member-manage-row').forEach(row => {
+                const name = row.querySelector('.mem-name').value.trim();
+                const instrument = row.querySelector('.mem-inst').value.trim();
+                const id = row.dataset.id || ('m_' + Math.random().toString(36).substr(2, 9));
+                if (name) {
+                    updatedMembers.push({
+                        id: id,
+                        name: name,
+                        instrument: instrument || '악기 미정'
+                    });
+                }
+            });
+
+            if (updatedMembers.length === 0) {
+                showToast('최소 1명 이상의 대표/모둠원을 등록해주세요.');
+                return;
+            }
+
+            group.members = updatedMembers;
+            syncGroup(group);
+
+            openGroupDetail(group);
+            closeManageMembersModal();
+        }
+
+        function showToast(message) {
+            let toast = document.getElementById('custom-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'custom-toast';
+                toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-2 border border-slate-700';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<i class="fas fa-info-circle text-amber-400"></i> ${message}`;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        const statusConfig = {
+            '💙 완벽': { badgeClass: 'bg-sky-100 text-sky-800 border-sky-300', emoji: '💙' },
+            '🟢 거의 완료': { badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300', emoji: '🟢' },
+            '🟠 연습중': { badgeClass: 'bg-amber-100 text-amber-800 border-amber-300', emoji: '🟠' },
+            '🔴 연습필요': { badgeClass: 'bg-rose-100 text-rose-800 border-rose-300', emoji: '🔴' }
+        };
+
+        function renderRecords() {
+            const container = document.getElementById('recordsList');
+            const emptyState = document.getElementById('emptyRecordState');
+            const badge = document.getElementById('recordCountBadge');
+            
+            const group = getActiveGroup();
+            const groupMembers = group ? (group.members || []) : [];
+
+            const groupRecords = appData.records
+                .filter(r => r.groupId === currentState.groupId)
+                .sort((a, b) => b.id - a.id);
+            
+            badge.textContent = `${groupRecords.length}건`;
+            container.innerHTML = '';
+            
+            if (groupRecords.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                groupRecords.forEach(record => {
+                    const card = document.createElement('div');
+                    card.className = 'notebook-sheet rounded-3xl p-5 md:p-6 card-shadow border-2 border-slate-300 text-slate-800 space-y-4 relative overflow-hidden';
+                    
+                    const studentDataMap = record.studentData || {};
+
+                    const studentsHtml = groupMembers.map(member => {
+                        const stData = studentDataMap[member.id] || studentDataMap[member.name] || {};
+                        const stStatus = stData.status || '🔴 연습필요';
+                        const stStyle = statusConfig[stStatus] || statusConfig['🔴 연습필요'];
+                        const hasEntered = !!(stData.todayPractice && stData.status && stData.nextGoal);
+
+                        return `
+                            <div onclick="openStudentRecordModal(${record.id}, '${member.id}')" 
+                                 class="border-2 border-dashed border-slate-300 rounded-2xl p-4 bg-white/90 hover:bg-amber-50/50 hover:border-amber-400 cursor-pointer transition-all flex flex-col justify-between space-y-2 relative group shadow-sm">
+                                <div class="flex justify-between items-start border-b border-slate-200 pb-2">
+                                    <span class="font-black text-slate-900 text-base flex items-center gap-1">
+                                        ${member.name} <span class="text-xs font-normal text-slate-500">(${member.instrument})</span>
+                                    </span>
+                                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full border ${stStyle.badgeClass} flex items-center gap-1 shrink-0">
+                                        <span>${stStyle.emoji}</span> ${stStatus.replace(/^[^\s]+\s*/, '')}
+                                    </span>
+                                </div>
+                                
+                                ${hasEntered ? `
+                                <div class="text-xs space-y-1.5 font-medium text-slate-700">
+                                    <p class="leading-relaxed"><strong class="text-slate-900">- 오늘 한 연습 :</strong> ${stData.todayPractice}</p>
+                                    <p class="leading-relaxed"><strong class="text-slate-900">- 현재 상태 :</strong> ${stStatus}</p>
+                                    <p class="leading-relaxed"><strong class="text-slate-900">- 다음 목표 :</strong> ${stData.nextGoal}</p>
+                                </div>
+                                ` : `
+                                <div class="py-4 text-center text-xs text-indigo-500 font-bold flex items-center justify-center gap-1 group-hover:scale-105 transition-transform">
+                                    <i class="fas fa-edit"></i> 클릭하여 연습 내용 기록하기
+                                </div>
+                                `}
+                                
+                                <div class="text-[10px] text-right text-slate-400 font-semibold group-hover:text-indigo-600">
+                                    <i class="fas fa-pen text-[9px] mr-0.5"></i> 클릭하여 수정
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    card.innerHTML = `
+                        <!-- Header Section -->
+                        <div class="space-y-2 border-b-2 border-slate-200 pb-3">
+                            <div class="flex justify-between items-center flex-wrap gap-2">
+                                <h4 class="font-black text-lg md:text-xl text-amber-900 flex items-center gap-1">
+                                    <span class="text-amber-500">▶︎</span> 날짜 : ${record.date}
+                                </h4>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="openRecordForm(${record.id})" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1 rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
+                                        <i class="fas fa-edit"></i> 내용 수정
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="font-bold text-slate-800 text-base flex items-start gap-1">
+                                <span class="text-amber-500 shrink-0">▶︎</span> 오늘의 목표 : <span class="font-normal text-slate-800">${record.todayGoal}</span>
+                            </p>
+                        </div>
+
+                        <!-- Grid of Group Members -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-2">
+                            ${studentsHtml || '<p class="text-xs text-slate-400">모둠원이 없습니다. 상단에서 모둠원을 추가해 주세요.</p>'}
+                        </div>
+
+                        <!-- Summary Section -->
+                        <div class="space-y-2 text-base font-bold pt-2 border-t border-slate-200">
+                            <p class="text-indigo-950 flex items-start gap-1.5">
+                                <span class="text-amber-500 shrink-0">▶︎</span> 오늘 우리 모둠이 해낸 것 :
+                                <span class="font-normal text-slate-800">${record.groupAchieved}</span>
+                            </p>
+                            <p class="text-indigo-950 flex items-start gap-1.5">
+                                <span class="text-amber-500 shrink-0">▶︎</span> 다음 시간 최우선 목표 :
+                                <span class="font-normal text-slate-800">${record.groupNextGoal}</span>
+                            </p>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        }
+
+        function openRecordForm(recordId = null) {
+            const group = getActiveGroup();
+            if (!group) return;
+
+            document.getElementById('practiceForm').reset();
+            const editingInput = document.getElementById('editingRecordId');
+            const titleEl = document.getElementById('recordFormTitle');
+
+            if (recordId) {
+                const record = appData.records.find(r => r.id === recordId);
+                if (record) {
+                    editingInput.value = record.id;
+                    if (titleEl) titleEl.textContent = '모둠 합주 연습 기록 수정';
+                    
+                    const formattedDate = record.date ? record.date.replace(/\./g, '-') : new Date().toISOString().split('T')[0];
+                    document.getElementById('recordDate').value = formattedDate;
+                    document.getElementById('todayGoal').value = record.todayGoal === '기록 없음' ? '' : record.todayGoal;
+                    document.getElementById('groupAchieved').value = record.groupAchieved === '기록 없음' ? '' : record.groupAchieved;
+                    document.getElementById('groupNextGoal').value = record.groupNextGoal === '기록 없음' ? '' : record.groupNextGoal;
+                }
+            } else {
+                editingInput.value = '';
+                if (titleEl) titleEl.textContent = '오늘의 모둠 합주 연습 기록장';
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('recordDate').value = today;
+            }
+
+            switchView('view-record-form');
+        }
+
+        function closeRecordForm() {
+            switchView('view-group-detail');
+        }
+
+        document.getElementById('practiceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const editingId = document.getElementById('editingRecordId').value;
+            const dateVal = document.getElementById('recordDate').value;
+            const formattedDate = dateVal ? dateVal.replace(/-/g, '.') : new Date().toISOString().split('T')[0].replace(/-/g, '.');
+            const todayGoal = document.getElementById('todayGoal').value.trim() || '기록 없음';
+            const groupAchieved = document.getElementById('groupAchieved').value.trim() || '기록 없음';
+            const groupNextGoal = document.getElementById('groupNextGoal').value.trim() || '기록 없음';
+
+            let targetRecord;
+            if (editingId) {
+                targetRecord = appData.records.find(r => r.id === Number(editingId));
+                if (targetRecord) {
+                    targetRecord.date = formattedDate;
+                    targetRecord.todayGoal = todayGoal;
+                    targetRecord.groupAchieved = groupAchieved;
+                    targetRecord.groupNextGoal = groupNextGoal;
+                }
+            } else {
+                targetRecord = {
+                    id: Date.now(),
+                    groupId: currentState.groupId,
+                    date: formattedDate,
+                    todayGoal: todayGoal,
+                    groupAchieved: groupAchieved,
+                    groupNextGoal: groupNextGoal,
+                    studentData: {}
+                };
+            }
+
+            if (targetRecord) {
+                syncRecord(targetRecord);
+            }
+
+            closeRecordForm();
+            renderRecords();
+        });
+
+        function openStudentRecordModal(recordId, memberId) {
+            const group = getActiveGroup();
+            if (!group) return;
+
+            const member = (group.members || []).find(m => m.id === memberId) || { name: memberId, instrument: '' };
+            const record = appData.records.find(r => r.id === recordId);
+            if (!record) return;
+
+            if (!record.studentData) record.studentData = {};
+            const stData = record.studentData[memberId] || record.studentData[member.name] || {};
+
+            document.getElementById('stRecordId').value = recordId;
+            document.getElementById('stMemberId').value = memberId;
+            document.getElementById('stModalTitle').textContent = `${member.name} 학생의 연습 기록`;
+            document.getElementById('stModalSub').textContent = `담당 악기 : ${member.instrument || '미정'}`;
+
+            document.getElementById('stPractice').value = stData.todayPractice || '';
+            document.getElementById('stStatus').value = stData.status || '🔴 연습필요';
+            document.getElementById('stNextGoal').value = stData.nextGoal || '';
+
+            document.getElementById('studentRecordModal').classList.remove('hidden');
+        }
+
+        function closeStudentRecordModal() {
+            document.getElementById('studentRecordModal').classList.add('hidden');
+        }
+
+        document.getElementById('studentRecordForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const recordId = Number(document.getElementById('stRecordId').value);
+            const memberId = document.getElementById('stMemberId').value;
+            const practice = document.getElementById('stPractice').value.trim();
+            const status = document.getElementById('stStatus').value;
+            const nextGoal = document.getElementById('stNextGoal').value.trim();
+
+            if (!practice || !status || !nextGoal) {
+                showToast('모든 항목(오늘 한 연습, 현재 상태, 다음 목표)을 작성해야 저장할 수 있습니다.');
+                return;
+            }
+
+            const record = appData.records.find(r => r.id === recordId);
+            if (record) {
+                if (!record.studentData) record.studentData = {};
+                record.studentData[memberId] = {
+                    todayPractice: practice,
+                    status: status,
+                    nextGoal: nextGoal
+                };
+
+                syncRecord(record);
+                renderRecords();
+            }
+
+            closeStudentRecordModal();
+        });
+
+        window.openStatusView = openStatusView;
+        window.closeStatusView = closeStatusView;
+        window.openIncompleteStudentsModal = openIncompleteStudentsModal;
+        window.closeIncompleteStudentsModal = closeIncompleteStudentsModal;
+        window.openNewGroupModal = openNewGroupModal;
+        window.closeNewGroupModal = closeNewGroupModal;
+        window.openGroupDetail = openGroupDetail;
+        window.goBackToGroups = goBackToGroups;
+        window.openEditSongModal = openEditSongModal;
+        window.closeEditSongModal = closeEditSongModal;
+        window.openEditGroupNameModal = openEditGroupNameModal;
+        window.closeEditGroupNameModal = closeEditGroupNameModal;
+        window.openManageMembersModal = openManageMembersModal;
+        window.closeManageMembersModal = closeManageMembersModal;
+        window.addMemberInputRow = addMemberInputRow;
+        window.saveMembersList = saveMembersList;
+        window.openRecordForm = openRecordForm;
+        window.closeRecordForm = closeRecordForm;
+        window.openStudentRecordModal = openStudentRecordModal;
+        window.closeStudentRecordModal = closeStudentRecordModal;
+
+        loadLocalData();
+        renderGroups();
+        switchView('view-group-list');
+        initAuthAndFirestore();
+    </script>
+
+    <!-- Footer Copyright -->
+    <footer class="text-center py-4 text-[11px] text-slate-400 font-medium tracking-tight">
+        2026. 걍샤T. All rights reserved.
+    </footer>
+</body>
+</html>
